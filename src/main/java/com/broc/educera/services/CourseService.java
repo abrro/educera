@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -17,6 +18,10 @@ import java.util.Optional;
 public class CourseService implements CommonDaoInterface<Course, Long> {
 
     private final CourseRepository courseRepository;
+    
+    public List<Course> findAll() {
+        return courseRepository.findAll();
+    }
 
     public Page<Course> findAll(Pageable pageable) {
         return courseRepository.findAll(pageable);

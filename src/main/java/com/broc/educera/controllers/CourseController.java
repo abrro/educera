@@ -1,6 +1,6 @@
 package com.broc.educera.controllers;
 
-import com.broc.educera.dtos.CourseRequest;
+import com.broc.educera.dtos.requests.CourseRequest;
 import com.broc.educera.entities.Course;
 import com.broc.educera.entities.CourseEnrollment;
 import com.broc.educera.entities.User;
@@ -36,6 +36,11 @@ public class CourseController {
                                  @RequestParam("size") Integer pageSize) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.unsorted());
         return ResponseEntity.ok().body(courseService.findAll(pageable));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> all() {
+        return ResponseEntity.ok().body(courseService.findAll());
     }
 
     @GetMapping("/{id}")
@@ -96,33 +101,54 @@ public class CourseController {
         return ResponseEntity.ok().body(courseEnrollmentService.enrolledStudents(id, pageable));
     }
 
-    @PostMapping(value = "/{id}/enroll",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> enrollStudent(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
+    @GetMapping("/{id}/enrolled")
+    public ResponseEntity<?> isLoggedStudentEnrolled(@PathVariable Long id, @AuthenticationPrincipal User currentUser){
         Course course = courseService.findById(id).orElseThrow();
-        Optional<CourseEnrollment> enrollmentOptional = courseEnrollmentService.findByStudentIdAndCourseId(currentUser.getId(), id);
-        if(enrollmentOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Already enrolled on this course");
+        if(currentUser.getUserType().equals(UserType.STUDENT)) {
+            Optional<CourseEnrollment> enrollmentOptional = courseEnrollmentService.findByStudentIdAndCourseId(currentUser.getId(), course.getId());
+            if (enrollmentOptional.isPresent()) {
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You are not enrolled on this course yet.");
+            }
         } else {
-            CourseEnrollment newCourseEnrollment = CourseEnrollment.builder()
-                    .enrollmentDate(LocalDateTime.now())
-                    .course(course)
-                    .student(currentUser)
-                    .build();
-            return ResponseEntity.ok().body(courseEnrollmentService.save(newCourseEnrollment));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
-    @DeleteMapping("/unlist/{id}")
-    public ResponseEntity<?> unlistStudent(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
-        //pogledaj ponovo kako bi ovo trebalo? da li trebaju provere da je student? mislim da ne treba jer auth princ
-        Optional<CourseEnrollment> enrollmentOptional = courseEnrollmentService.findByStudentIdAndCourseId(currentUser.getId(), id);
-        if (enrollmentOptional.isPresent()) {
-            courseEnrollmentService.deleteById(enrollmentOptional.get().getId());
-            return ResponseEntity.ok().build();
+    //students enroll and unlist themselves
+    @PostMapping(value = "/{id}/enroll")
+    public ResponseEntity<?> enrollStudent(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
+        if(currentUser.getUserType().equals(UserType.STUDENT)) {
+            Course course = courseService.findById(id).orElseThrow();
+            Optional<CourseEnrollment> enrollmentOptional = courseEnrollmentService.findByStudentIdAndCourseId(currentUser.getId(), course.getId());
+            if (enrollmentOptional.isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Already enrolled on this course");
+            } else {
+                CourseEnrollment newCourseEnrollment = CourseEnrollment.builder()
+                        .enrollmentDate(LocalDateTime.now())
+                        .course(course)
+                        .student(currentUser)
+                        .build();
+                return ResponseEntity.ok().body(courseEnrollmentService.save(newCourseEnrollment));
+            }
         } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Not enrolled on course.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @DeleteMapping("/{id}/unlist")
+    public ResponseEntity<?> unlistStudent(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
+        if(currentUser.getUserType().equals(UserType.STUDENT)) {
+            Optional<CourseEnrollment> enrollmentOptional = courseEnrollmentService.findByStudentIdAndCourseId(currentUser.getId(), id);
+            if (enrollmentOptional.isPresent()) {
+                courseEnrollmentService.deleteById(enrollmentOptional.get().getId());
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Not enrolled on course.");
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 

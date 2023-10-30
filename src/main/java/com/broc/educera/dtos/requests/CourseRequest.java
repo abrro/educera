@@ -1,4 +1,4 @@
-package com.broc.educera.dtos;
+package com.broc.educera.dtos.requests;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

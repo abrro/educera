@@ -34,9 +34,7 @@ public class QuizParticipation {
     @JoinColumn(name = "student_id")
     private User student;
 
-    @OneToMany(mappedBy = "quizParticipation")
-    private List<ChoiceQuestionResponse> choiceQuestionResponses;
+    @OneToMany(mappedBy = "quizParticipation", cascade = CascadeType.ALL)
+    private List<QuestionResponse> questionResponses;
 
-    @OneToMany(mappedBy = "quizParticipation")
-    private List<ChoiceQuestionResponse> shortAnswerQuestionResponses;
 }

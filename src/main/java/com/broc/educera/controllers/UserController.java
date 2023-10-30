@@ -1,7 +1,7 @@
 package com.broc.educera.controllers;
 
-import com.broc.educera.dtos.TokenResponse;
-import com.broc.educera.dtos.UserLoginRequest;
+import com.broc.educera.dtos.responses.TokenResponse;
+import com.broc.educera.dtos.requests.UserLoginRequest;
 import com.broc.educera.entities.User;
 import com.broc.educera.entities.UserType;
 import com.broc.educera.services.UserService;
@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,7 +27,7 @@ public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
     @GetMapping
@@ -40,6 +40,8 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<?> one(@PathVariable Long id) {
         User user = userService.findById(id).orElseThrow();
+        //moze da dohvati specidificni get koji nije kolekcija ali ne moze kolekciju jer poziva kruzno toString takodje
+        //System.out.println(user.getTeachesCourses().get(0));
         return ResponseEntity.ok().body(user);
     }
 
